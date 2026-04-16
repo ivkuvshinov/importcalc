@@ -1,0 +1,543 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>ImportCalc — Курс ЦБ + наценка</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #f5f5f7;
+      --card: #ffffff;
+      --border: rgba(0,0,0,0.1);
+      --accent: #0071e3;
+      --accent-hover: #0077ed;
+      --text: #1d1d1f;
+      --muted: #6e6e73;
+      --success: #1a9e3f;
+      --danger: #d70015;
+      --shadow: 0 2px 12px rgba(0,0,0,0.08);
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #1c1c1e;
+        --card: #2c2c2e;
+        --border: rgba(255,255,255,0.1);
+        --text: #f5f5f7;
+        --muted: #98989d;
+        --shadow: 0 2px 12px rgba(0,0,0,0.3);
+      }
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif; background: var(--bg); color: var(--text); padding: 20px; min-height: 100vh; }
+    .wrap { max-width: 760px; margin: 0 auto; display: grid; gap: 14px; }
+
+    header { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+    .logo { font-size: 22px; font-weight: 700; letter-spacing: -0.5px; }
+    .logo span { color: var(--accent); }
+    .badge { display: flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 999px; border: 1px solid var(--border); font-size: 12px; color: var(--muted); background: var(--card); }
+
+    .card { background: var(--card); border-radius: 16px; padding: 20px; box-shadow: var(--shadow); border: 1px solid var(--border); }
+    .card-title { font-size: 13px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 14px; }
+
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+    @media (max-width: 600px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
+
+    label { display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 500; color: var(--muted); }
+    input, select {
+      font: inherit; font-size: 15px; color: var(--text);
+      padding: 10px 12px; border-radius: 10px;
+      border: 1.5px solid var(--border);
+      background: var(--bg);
+      transition: border-color 0.2s;
+      -webkit-appearance: none;
+    }
+    input:focus, select:focus { outline: none; border-color: var(--accent); }
+
+    .btn-row { display: flex; gap: 10px; flex-wrap: wrap; }
+    button {
+      font: inherit; font-size: 14px; font-weight: 600;
+      padding: 10px 20px; border-radius: 10px; border: none;
+      cursor: pointer; transition: all 0.15s;
+    }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-primary:hover { background: var(--accent-hover); }
+    .btn-primary:active { transform: scale(0.97); }
+    .btn-secondary { background: var(--border); color: var(--text); border: 1.5px solid var(--border); }
+    .btn-secondary:hover { opacity: 0.8; }
+
+    .kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .kpi { background: var(--bg); border-radius: 12px; padding: 14px; border: 1px solid var(--border); }
+    .kpi-label { font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+    .kpi-value { font-size: 26px; font-weight: 700; letter-spacing: -0.5px; }
+    .kpi-sub { font-size: 12px; color: var(--muted); margin-top: 4px; }
+    .kpi-up { color: var(--success); }
+    .kpi-down { color: var(--danger); }
+
+    .currency-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
+    .tab { padding: 6px 14px; border-radius: 999px; border: 1.5px solid var(--border); font-size: 13px; font-weight: 600; cursor: pointer; background: var(--bg); color: var(--muted); transition: all 0.15s; }
+    .tab.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+    .hint { font-size: 12px; color: var(--muted); line-height: 1.4; margin-top: 6px; }
+    .err { color: var(--danger); font-size: 13px; margin-top: 8px; }
+    .ok { color: var(--success); }
+
+    .history { display: grid; gap: 8px; }
+    .history-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; background: var(--bg); border-radius: 10px; border: 1px solid var(--border); font-size: 13px; }
+    .history-item .hi-date { color: var(--muted); }
+    .history-item .hi-rate { font-weight: 600; }
+    .empty { color: var(--muted); font-size: 13px; text-align: center; padding: 16px; }
+
+    .copy-btn { background: none; border: none; cursor: pointer; color: var(--accent); font-size: 13px; padding: 4px 8px; border-radius: 6px; }
+    .copy-btn:hover { background: var(--border); }
+
+    .trend { display: inline-flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 600; }
+
+    footer { text-align: center; font-size: 12px; color: var(--muted); padding: 8px; }
+  </style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="logo">Import<span>Calc</span></div>
+    <div class="badge">
+      <span id="statusDot">⏳</span>
+      <span id="statusText">Готов</span>
+    </div>
+  </header>
+
+  <!-- Настройки -->
+  <div class="card">
+    <div class="card-title">Валюта</div>
+    <div class="currency-tabs" id="currencyTabs">
+      <div class="tab active" data-cur="USD">🇺🇸 USD</div>
+      <div class="tab" data-cur="EUR">🇪🇺 EUR</div>
+      <div class="tab" data-cur="CNY">🇨🇳 CNY</div>
+      <div class="tab" data-cur="GBP">🇬🇧 GBP</div>
+      <div class="tab" data-cur="CHF">🇨🇭 CHF</div>
+      <div class="tab" data-cur="JPY">🇯🇵 JPY</div>
+      <div class="tab" data-cur="AED">🇦🇪 AED</div>
+      <div class="tab" data-cur="TRY">🇹🇷 TRY</div>
+    </div>
+
+    <div class="grid-2">
+      <label>
+        Дата курса
+        <div style="display:flex;gap:6px;">
+          <input id="date" type="date" style="flex:1;" />
+          <button class="btn-secondary" id="btnToday" style="padding:10px 12px;font-size:12px;">Сегодня</button>
+        </div>
+      </label>
+      <label>
+        Наценка, %
+        <input id="markup" type="number" inputmode="decimal" step="0.1" value="0" placeholder="0" />
+        <div class="hint">Итоговый курс = курс ЦБ × (1 + % / 100)</div>
+      </label>
+    </div>
+
+    <div class="btn-row" style="margin-top:14px;">
+      <button class="btn-primary" id="btnFetch">Получить курс</button>
+    </div>
+    <div id="msg"></div>
+  </div>
+
+  <!-- Результат -->
+  <div class="card">
+    <div class="card-title">Курс</div>
+    <div class="kpi-grid">
+      <div class="kpi">
+        <div class="kpi-label">Курс ЦБ (за 1 ед.)</div>
+        <div class="kpi-value" id="rateCbr">—</div>
+        <div class="kpi-sub">Дата: <span id="cbrDate">—</span></div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">С наценкой <span id="markupLabel"></span></div>
+        <div class="kpi-value" id="ratePlus">—</div>
+        <div class="kpi-sub" id="trendBlock"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Конвертер -->
+  <div class="card">
+    <div class="card-title">Конвертер</div>
+    <div class="grid-2">
+      <label>
+        Сумма в валюте (<span id="curLabel">USD</span>)
+        <div style="display:flex;gap:6px;align-items:center;">
+          <input id="amountFx" type="text" inputmode="decimal" placeholder="100" style="flex:1;" />
+          <button class="copy-btn" onclick="copyVal('amountFx')">📋</button>
+        </div>
+      </label>
+      <label>
+        Сумма в рублях (₽)
+        <div style="display:flex;gap:6px;align-items:center;">
+          <input id="amountRub" type="text" inputmode="decimal" placeholder="9 000" style="flex:1;" />
+          <button class="copy-btn" onclick="copyVal('amountRub')">📋</button>
+        </div>
+      </label>
+    </div>
+    <div class="hint">Введи в любое поле — второе пересчитается автоматически</div>
+    <div id="propisBlock" style="margin-top:12px;padding:12px;background:var(--bg);border-radius:10px;border:1px solid var(--border);font-size:13px;color:var(--muted);display:none;">
+      <span style="font-size:11px;text-transform:uppercase;letter-spacing:0.04em;">Прописью:</span><br>
+      <span id="propisText" style="font-size:15px;color:var(--text);font-weight:500;line-height:1.6;"></span>
+    </div>
+  </div>
+
+  <!-- История -->
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+      <div class="card-title" style="margin:0;">История запросов</div>
+      <button class="copy-btn" onclick="clearHistory()">Очистить</button>
+    </div>
+    <div class="history" id="historyList">
+      <div class="empty">История пуста</div>
+    </div>
+  </div>
+
+  <footer>ImportCalc · Курсы ЦБ РФ · cbr-xml-daily.ru</footer>
+</div>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id)
+  const pad2 = n => String(n).padStart(2, '0')
+  const round2 = x => Math.round((x + Number.EPSILON) * 100) / 100
+  const fmt = x => Number.isFinite(x) ? x.toFixed(2) : '—'
+
+  let currentRatePlus = null
+  let currentRateCbr = null
+  let lastEdited = null
+  let selectedCurrency = 'USD'
+
+  // Init date
+  const today = new Date()
+  $('date').value = `${today.getFullYear()}-${pad2(today.getMonth()+1)}-${pad2(today.getDate())}`
+
+  // Currency tabs
+  document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'))
+      tab.classList.add('active')
+      selectedCurrency = tab.dataset.cur
+      $('curLabel').textContent = selectedCurrency
+      fetchRate()
+    })
+  })
+
+  $('btnToday').addEventListener('click', () => {
+    const d = new Date()
+    $('date').value = `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`
+    fetchRate()
+  })
+
+  $('btnFetch').addEventListener('click', fetchRate)
+
+  $('markup').addEventListener('input', () => {
+    if (currentRateCbr) {
+      const markup = Number($('markup').value || 0)
+      currentRatePlus = round2(currentRateCbr * (1 + markup / 100))
+      $('ratePlus').textContent = fmt(currentRatePlus)
+      $('markupLabel').textContent = markup ? `+${markup}%` : ''
+      recalc()
+    }
+  })
+
+  $('amountFx').addEventListener('input', () => { lastEdited = 'fx'; recalc() })
+  $('amountRub').addEventListener('input', () => { lastEdited = 'rub'; recalc() })
+
+  function setStatus(kind, text) {
+    const dots = { busy: '⏳', ok: '✅', err: '⚠️' }
+    $('statusDot').textContent = dots[kind] || '⏳'
+    $('statusText').textContent = text
+  }
+
+  function setMsg(html, isErr) {
+    $('msg').className = isErr ? 'err' : 'hint'
+    $('msg').innerHTML = html || ''
+  }
+
+  async function fetchRate() {
+    const dateStr = $('date').value
+    if (!dateStr) { setMsg('Выбери дату.', true); return }
+
+    setStatus('busy', 'Запрашиваю…')
+    setMsg('')
+
+    const [y, m, d] = dateStr.split('-').map(Number)
+    const url = `https://www.cbr-xml-daily.ru/archive/${y}/${pad2(m)}/${pad2(d)}/daily_json.js`
+
+    try {
+      const res = await fetch(url)
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      const data = await res.json()
+
+      const docDate = data?.Date ? new Date(data.Date).toLocaleDateString('ru-RU') : '—'
+      const v = data?.Valute?.[selectedCurrency]
+      if (!v) throw new Error(`Валюта ${selectedCurrency} не найдена`)
+
+      const nominal = Number(v.Nominal ?? 1)
+      const value = Number(v.Value)
+      currentRateCbr = value / nominal
+
+      const markup = Number($('markup').value || 0)
+      currentRatePlus = round2(currentRateCbr * (1 + markup / 100))
+
+      $('rateCbr').textContent = fmt(currentRateCbr)
+      $('ratePlus').textContent = fmt(currentRatePlus)
+      $('cbrDate').textContent = docDate
+      $('markupLabel').textContent = markup ? `+${markup}%` : ''
+
+      // Trend vs yesterday
+      fetchTrend(y, m, d, currentRateCbr)
+
+      setStatus('ok', 'Обновлено')
+      setMsg(`Данные ЦБ на: ${docDate}`)
+      recalc()
+      saveHistory(dateStr, selectedCurrency, currentRateCbr, currentRatePlus, markup)
+    } catch(e) {
+      currentRatePlus = null
+      currentRateCbr = null
+      $('rateCbr').textContent = '—'
+      $('ratePlus').textContent = '—'
+      $('cbrDate').textContent = '—'
+      setStatus('err', 'Ошибка')
+      setMsg(`Не удалось получить курс: ${e.message}`, true)
+    }
+  }
+
+  async function fetchTrend(y, m, d, todayRate) {
+    try {
+      const prev = new Date(y, m-1, d)
+      prev.setDate(prev.getDate() - 1)
+      const url = `https://www.cbr-xml-daily.ru/archive/${prev.getFullYear()}/${pad2(prev.getMonth()+1)}/${pad2(prev.getDate())}/daily_json.js`
+      const res = await fetch(url)
+      if (!res.ok) return
+      const data = await res.json()
+      const v = data?.Valute?.[selectedCurrency]
+      if (!v) return
+      const prevRate = Number(v.Value) / Number(v.Nominal ?? 1)
+      const diff = round2(todayRate - prevRate)
+      const pct = round2((diff / prevRate) * 100)
+      const sign = diff >= 0 ? '+' : ''
+      const cls = diff >= 0 ? 'kpi-up' : 'kpi-down'
+      const arrow = diff >= 0 ? '↑' : '↓'
+      $('trendBlock').innerHTML = `<span class="trend ${cls}">${arrow} ${sign}${fmt(diff)} (${sign}${pct}%) vs вчера</span>`
+    } catch {}
+  }
+
+  function fmtNum(x, dec) {
+    if (!Number.isFinite(x)) return ''
+    return x.toLocaleString('ru-RU', { minimumFractionDigits: dec, maximumFractionDigits: dec })
+  }
+
+  function parseInput(val) {
+    return Number(String(val).replace(/\s/g, '').replace(',', '.'))
+  }
+
+  function recalc() {
+    if (!Number.isFinite(currentRatePlus) || currentRatePlus <= 0) return
+    const rate = currentRatePlus
+    if (lastEdited === 'fx') {
+      const fx = parseInput($('amountFx').value)
+      if (!Number.isFinite(fx)) { $('amountRub').value = ''; return }
+      const rub = round2(fx * rate)
+      $('amountRub').dataset.val = rub
+      $('amountRub').value = fmtNum(rub, 2)
+      updatePropisRub(rub)
+    } else if (lastEdited === 'rub') {
+      const rub = parseInput($('amountRub').value)
+      if (!Number.isFinite(rub)) { $('amountFx').value = ''; return }
+      const fx = round2(rub / rate)
+      $('amountFx').dataset.val = fx
+      $('amountFx').value = fmtNum(fx, 2)
+      updatePropisRub(rub)
+    }
+  }
+
+  // Прописью
+  function numToWords(n) {
+    if (!Number.isFinite(n) || n < 0) return ''
+    const rub = Math.floor(n)
+    const kop = Math.round((n - rub) * 100)
+
+    const ones = ['','один','два','три','четыре','пять','шесть','семь','восемь','девять']
+    const onesF = ['','одна','две','три','четыре','пять','шесть','семь','восемь','девять']
+    const teens = ['десять','одиннадцать','двенадцать','тринадцать','четырнадцать','пятнадцать','шестнадцать','семнадцать','восемнадцать','девятнадцать']
+    const tens = ['','десять','двадцать','тридцать','сорок','пятьдесят','шестьдесят','семьдесят','восемьдесят','девяносто']
+    const hundreds = ['','сто','двести','триста','четыреста','пятьсот','шестьсот','семьсот','восемьсот','девятьсот']
+
+    function plural(n, f1, f2, f5) {
+      const n10 = n % 10, n100 = n % 100
+      if (n100 >= 11 && n100 <= 19) return f5
+      if (n10 === 1) return f1
+      if (n10 >= 2 && n10 <= 4) return f2
+      return f5
+    }
+
+    function group(n, female) {
+      let s = ''
+      const h = Math.floor(n / 100)
+      const t = Math.floor((n % 100) / 10)
+      const o = n % 10
+      if (h) s += hundreds[h] + ' '
+      if (t === 1) { s += teens[o] + ' ' }
+      else {
+        if (t) s += tens[t] + ' '
+        if (o) s += (female ? onesF[o] : ones[o]) + ' '
+      }
+      return s
+    }
+
+    let result = ''
+    const billions = Math.floor(rub / 1000000000)
+    const millions = Math.floor((rub % 1000000000) / 1000000)
+    const thousands = Math.floor((rub % 1000000) / 1000)
+    const remainder = rub % 1000
+
+    if (billions) result += group(billions, false) + plural(billions % 1000, 'миллиард', 'миллиарда', 'миллиардов') + ' '
+    if (millions) result += group(millions, false) + plural(millions % 1000, 'миллион', 'миллиона', 'миллионов') + ' '
+    if (thousands) result += group(thousands, true) + plural(thousands % 1000, 'тысяча', 'тысячи', 'тысяч') + ' '
+    if (remainder || !result) result += group(remainder, false)
+
+    result = result.trim()
+    result += ' ' + plural(rub % 1000 === 0 ? Math.floor(rub/1000) % 1000 || rub : rub % 1000, 'рубль', 'рубля', 'рублей')
+
+    if (kop > 0) {
+      result += ' ' + group(kop, true).trim() + ' ' + plural(kop, 'копейка', 'копейки', 'копеек')
+    }
+
+    return result.trim().replace(/^./, c => c.toUpperCase())
+  }
+
+  function updatePropisRub(val) {
+    const n = parseInput(String(val))
+    if (!Number.isFinite(n) || n <= 0) {
+      $('propisBlock').style.display = 'none'
+      return
+    }
+    $('propisText').textContent = numToWords(n)
+    $('propisBlock').style.display = 'block'
+  }
+
+  // Propis
+  const ones = ['','один','два','три','четыре','пять','шесть','семь','восемь','девять']
+  const onesF = ['','одна','две','три','четыре','пять','шесть','семь','восемь','девять']
+  const teens = ['десять','одиннадцать','двенадцать','тринадцать','четырнадцать','пятнадцать','шестнадцать','семнадцать','восемнадцать','девятнадцать']
+  const tens = ['','десять','двадцать','тридцать','сорок','пятьдесят','шестьдесят','семьдесят','восемьдесят','девяносто']
+  const hundreds = ['','сто','двести','триста','четыреста','пятьсот','шестьсот','семьсот','восемьсот','девятьсот']
+
+  function declension(n, f1, f2, f5) {
+    const m = Math.abs(n) % 100
+    const m1 = m % 10
+    if (m >= 11 && m <= 19) return f5
+    if (m1 === 1) return f1
+    if (m1 >= 2 && m1 <= 4) return f2
+    return f5
+  }
+
+  function chunk(n, female) {
+    const o = female ? onesF : ones
+    let r = ''
+    const h = Math.floor(n / 100)
+    const t = Math.floor((n % 100) / 10)
+    const u = n % 10
+    if (h) r += hundreds[h] + ' '
+    if (t === 1) { r += teens[u] + ' '; return r.trim() }
+    if (t) r += tens[t] + ' '
+    if (u) r += o[u] + ' '
+    return r.trim()
+  }
+
+  function numToWords(n) {
+    if (!Number.isFinite(n) || n < 0) return ''
+    const intPart = Math.floor(n)
+    const kopPart = Math.round((n - intPart) * 100)
+
+    if (intPart === 0 && kopPart === 0) return 'ноль рублей ноль копеек'
+
+    let result = ''
+
+    const billions = Math.floor(intPart / 1000000000)
+    const millions = Math.floor((intPart % 1000000000) / 1000000)
+    const thousands = Math.floor((intPart % 1000000) / 1000)
+    const remainder = intPart % 1000
+
+    if (billions) {
+      result += chunk(billions, false) + ' ' + declension(billions, 'миллиард', 'миллиарда', 'миллиардов') + ' '
+    }
+    if (millions) {
+      result += chunk(millions, false) + ' ' + declension(millions, 'миллион', 'миллиона', 'миллионов') + ' '
+    }
+    if (thousands) {
+      result += chunk(thousands, true) + ' ' + declension(thousands, 'тысяча', 'тысячи', 'тысяч') + ' '
+    }
+    if (remainder) {
+      result += chunk(remainder, false) + ' '
+    }
+    if (intPart === 0) result = 'ноль '
+
+    result += declension(intPart, 'рубль', 'рубля', 'рублей')
+
+    if (kopPart > 0) {
+      result += ' ' + String(kopPart).padStart(2,'0') + ' ' + declension(kopPart, 'копейка', 'копейки', 'копеек')
+    }
+
+    return result.trim()
+  }
+
+  function updatePropisRub(val) {
+    const n = parseInput(val)
+    const block = $('propisBlock')
+    const text = $('propisText')
+    if (!Number.isFinite(n) || n <= 0) { block.style.display = 'none'; return }
+    block.style.display = 'block'
+    const words = numToWords(n)
+    text.textContent = words.charAt(0).toUpperCase() + words.slice(1)
+  }
+
+  // History
+  function loadHistory() {
+    try { return JSON.parse(localStorage.getItem('importcalc_history') || '[]') } catch { return [] }
+  }
+  function saveHistory(date, cur, cbr, plus, markup) {
+    const h = loadHistory()
+    h.unshift({ date, cur, cbr: round2(cbr), plus, markup, ts: Date.now() })
+    localStorage.setItem('importcalc_history', JSON.stringify(h.slice(0, 20)))
+    renderHistory()
+  }
+  function clearHistory() {
+    localStorage.removeItem('importcalc_history')
+    renderHistory()
+  }
+  function renderHistory() {
+    const h = loadHistory()
+    const el = $('historyList')
+    if (!h.length) { el.innerHTML = '<div class="empty">История пуста</div>'; return }
+    el.innerHTML = h.map(item => `
+      <div class="history-item">
+        <span class="hi-date">${item.date} · ${item.cur}${item.markup ? ` +${item.markup}%` : ''}</span>
+        <span class="hi-rate">${item.cbr.toFixed(2)} ₽ → ${item.plus.toFixed(2)} ₽</span>
+      </div>
+    `).join('')
+  }
+
+  window.copyVal = function(id) {
+    const val = $(id).value
+    if (!val) return
+    navigator.clipboard.writeText(val).then(() => {
+      const btn = $(id).nextElementSibling
+      const orig = btn.textContent
+      btn.textContent = '✅'
+      setTimeout(() => btn.textContent = orig, 1000)
+    })
+  }
+
+  renderHistory()
+  fetchRate()
+})()
+</script>
+</body>
+</html>
