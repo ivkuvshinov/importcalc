@@ -1,9 +1,17 @@
 {
-  "version": 2,
-  "builds": [
+  "functions": {
+    "api/cbr.js": {
+      "runtime": "edge"
+    }
+  },
+  "routes": [
     {
-      "src": "**/*",
-      "use": "@vercel/static"
+      "src": "/api/(.*)",
+      "dest": "/api/$1"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
     }
   ]
 }
