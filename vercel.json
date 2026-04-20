@@ -3,7 +3,7 @@
   "builds": [
     {
       "src": "api/cbr.js",
-      "use": "@vercel/edge"
+      "use": "@vercel/node"
     },
     {
       "src": "index.html",

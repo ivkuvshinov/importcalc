@@ -1,43 +1,25 @@
-export const config = { runtime: 'edge' }
-
-export default async function handler(req) {
-  const { searchParams } = new URL(req.url)
-  const date = searchParams.get('date') // YYYY-MM-DD
-
-  if (!date) {
-    return new Response(JSON.stringify({ error: 'date param required' }), {
-      status: 400,
-      headers: { 'Content-Type': 'application/json' },
-    })
-  }
+export default async function handler(req, res) {
+  const { date } = req.query
+  if (!date) return res.status(400).json({ error: 'date param required' })
 
   const [y, m, d] = date.split('-')
-  const dd = d.padStart(2, '0')
-  const mm = m.padStart(2, '0')
+  const dd = String(d).padStart(2, '0')
+  const mm = String(m).padStart(2, '0')
   const cbrUrl = `https://www.cbr.ru/scripts/XML_daily.asp?date_req=${dd}/${mm}/${y}`
 
   try {
-    const res = await fetch(cbrUrl, {
-      headers: { 'User-Agent': 'Mozilla/5.0' },
+    const response = await fetch(cbrUrl, {
+      headers: { 'User-Agent': 'Mozilla/5.0' }
     })
-    if (!res.ok) throw new Error(`CBR HTTP ${res.status}`)
-    const xml = await res.text()
+    if (!response.ok) throw new Error(`CBR HTTP ${response.status}`)
+    const xml = await response.text()
 
-    return new Response(xml, {
-      status: 200,
-      headers: {
-        'Content-Type': 'application/xml; charset=windows-1251',
-        'Access-Control-Allow-Origin': '*',
-        'Cache-Control': 's-maxage=3600',
-      },
-    })
+    res.setHeader('Access-Control-Allow-Origin', '*')
+    res.setHeader('Cache-Control', 's-maxage=3600')
+    res.setHeader('Content-Type', 'text/xml; charset=windows-1251')
+    res.status(200).send(xml)
   } catch (e) {
-    return new Response(JSON.stringify({ error: e.message }), {
-      status: 502,
-      headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*',
-      },
-    })
+    res.setHeader('Access-Control-Allow-Origin', '*')
+    res.status(502).json({ error: e.message })
   }
 }
