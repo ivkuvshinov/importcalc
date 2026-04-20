@@ -197,7 +197,7 @@
     </div>
   </div>
 
-  <footer>ImportCalc · Курсы ЦБ РФ · cbr-xml-daily.ru</footer>
+  <footer>ImportCalc · Курсы ЦБ РФ · cbr.ru</footer>
 </div>
 
 <script>
@@ -259,6 +259,34 @@
     $('msg').innerHTML = html || ''
   }
 
+  // Helper: fetch CBR XML via our edge proxy, parse rate by currency code
+  async function fetchCbr(dateStr) {
+    const res = await fetch(`/api/cbr?date=${dateStr}`)
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+    const text = await res.text()
+    const parser = new DOMParser()
+    const xml = parser.parseFromString(text, 'application/xml')
+    // Date from attribute e.g. "20.04.2026"
+    const dateAttr = xml.querySelector('ValCurs')?.getAttribute('Date') || ''
+    let docDate = '—'
+    if (dateAttr) {
+      const [dd, mm, yyyy] = dateAttr.split('.')
+      docDate = new Date(`${yyyy}-${mm}-${dd}`).toLocaleDateString('ru-RU')
+    }
+    return { xml, docDate }
+  }
+
+  function getRateFromXml(xml, currency) {
+    for (const node of xml.querySelectorAll('Valute')) {
+      if (node.querySelector('CharCode')?.textContent === currency) {
+        const nominal = Number(node.querySelector('Nominal')?.textContent || 1)
+        const value = Number((node.querySelector('Value')?.textContent || '0').replace(',', '.'))
+        return value / nominal
+      }
+    }
+    return null
+  }
+
   async function fetchRate() {
     const dateStr = $('date').value
     if (!dateStr) { setMsg('Выбери дату.', true); return }
@@ -267,21 +295,13 @@
     setMsg('')
 
     const [y, m, d] = dateStr.split('-').map(Number)
-    const url = `https://www.cbr-xml-daily.ru/archive/${y}/${pad2(m)}/${pad2(d)}/daily_json.js`
 
     try {
-      const res = await fetch(url)
-      if (!res.ok) throw new Error(`HTTP ${res.status}`)
-      const data = await res.json()
+      const { xml, docDate } = await fetchCbr(dateStr)
+      const rate = getRateFromXml(xml, selectedCurrency)
+      if (!rate) throw new Error(`Валюта ${selectedCurrency} не найдена в данных ЦБ`)
 
-      const docDate = data?.Date ? new Date(data.Date).toLocaleDateString('ru-RU') : '—'
-      const v = data?.Valute?.[selectedCurrency]
-      if (!v) throw new Error(`Валюта ${selectedCurrency} не найдена`)
-
-      const nominal = Number(v.Nominal ?? 1)
-      const value = Number(v.Value)
-      currentRateCbr = value / nominal
-
+      currentRateCbr = rate
       const markup = Number($('markup').value || 0)
       currentRatePlus = round2(currentRateCbr * (1 + markup / 100))
 
@@ -290,7 +310,6 @@
       $('cbrDate').textContent = docDate
       $('markupLabel').textContent = markup ? `+${markup}%` : ''
 
-      // Trend vs yesterday
       fetchTrend(y, m, d, currentRateCbr)
 
       setStatus('ok', 'Обновлено')
@@ -312,13 +331,10 @@
     try {
       const prev = new Date(y, m-1, d)
       prev.setDate(prev.getDate() - 1)
-      const url = `https://www.cbr-xml-daily.ru/archive/${prev.getFullYear()}/${pad2(prev.getMonth()+1)}/${pad2(prev.getDate())}/daily_json.js`
-      const res = await fetch(url)
-      if (!res.ok) return
-      const data = await res.json()
-      const v = data?.Valute?.[selectedCurrency]
-      if (!v) return
-      const prevRate = Number(v.Value) / Number(v.Nominal ?? 1)
+      const prevStr = `${prev.getFullYear()}-${pad2(prev.getMonth()+1)}-${pad2(prev.getDate())}`
+      const { xml } = await fetchCbr(prevStr)
+      const prevRate = getRateFromXml(xml, selectedCurrency)
+      if (!prevRate) return
       const diff = round2(todayRate - prevRate)
       const pct = round2((diff / prevRate) * 100)
       const sign = diff >= 0 ? '+' : ''
